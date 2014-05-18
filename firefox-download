@@ -5,22 +5,28 @@ require "pp"
 json = File.read("#{ENV['HOME']}/.mozilla/firefox/iz79ilfw.default/downloads.json")
 downloads = JSON.parse(json)
 
-d  = downloads["list"].first
-url = d["source"]["url"]
-part_file = d["target"]["partFilePath"]
-file = d["target"]["path"]
-canceled = d["canceled"]
-if !canceled
-  puts "NOT paused in Firefox: #{file}"
-  exit
+def download(d)
+  url = d["source"]["url"]
+  part_file = d["target"]["partFilePath"]
+  file = d["target"]["path"]
+  canceled = d["canceled"]
+  if !canceled
+    puts "NOT paused in Firefox: #{file}"
+    return
+  end
+
+  command = ["wget", "--read-timeout=60", "--no-use-server-timestamps", "-c",  "-O", part_file, url]
+  puts command
+  result = system *command
+  if result
+    system "mv", part_file, file
+  else
+    puts "Failed"
+    pp result
+    pp $?
+  end
 end
-command = ["wget", "--read-timeout=60", "--no-use-server-timestamps", "-c",  "-O", part_file, url]
-puts command
-result = system *command
-if result
-  system "mv", part_file, file
-else
-  puts "Failed"
-  pp result
-  pp $?
+
+downloads["list"].each do |item|
+  download item
 end
