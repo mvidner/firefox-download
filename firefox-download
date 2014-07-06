@@ -9,7 +9,7 @@ def download(d)
   url = d["source"]["url"]
   part_file = d["target"]["partFilePath"]
   file = d["target"]["path"]
-  canceled = d["canceled"]
+  canceled = d["canceled"] || d["error"]
   if !canceled
     puts "NOT paused in Firefox: #{file}"
     return
