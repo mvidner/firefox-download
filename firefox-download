@@ -25,6 +25,9 @@ def download(d)
     pp result
     pp $?
   end
+rescue Interrupt
+  puts "\nInterrupt (sleep 1s)"
+  sleep 1
 end
 
 downloads["list"].each do |item|
