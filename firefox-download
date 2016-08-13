@@ -2,11 +2,14 @@
 require "json"
 require "pp"
 
-json = File.read("#{ENV['HOME']}/.mozilla/firefox/iz79ilfw.default/downloads.json")
+filename = Dir.glob("#{ENV['HOME']}/.mozilla/firefox/*.default/downloads.json").first
+json = File.read(filename)
 downloads = JSON.parse(json)
 
 def download(d)
-  url = d["source"]["url"]
+  url = d["source"]
+  url = url["url"] if url.is_a? Hash
+
   part_file = d["target"]["partFilePath"]
   file = d["target"]["path"]
   canceled = d["canceled"] || d["error"]
@@ -17,7 +20,7 @@ def download(d)
 
   command = ["wget", "--read-timeout=60", "--no-use-server-timestamps", "-c",  "-O", part_file, url]
   puts command
-  result = system *command
+  result = system(*command)
   if result
     system "mv", part_file, file
   else
