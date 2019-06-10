@@ -1,6 +1,7 @@
 #!/usr/bin/env ruby
 require "json"
 require "pp"
+require "shellwords"
 
 filename = Dir.glob("#{ENV['HOME']}/.mozilla/firefox/*.default/downloads.json").first
 json = File.read(filename)
@@ -19,7 +20,7 @@ def download(d)
   end
 
   command = ["wget", "--read-timeout=60", "--no-use-server-timestamps", "-c",  "-O", part_file, url]
-  puts command
+  puts command.map(&:shellescape).join(" ")
   result = system(*command)
   if result
     system "mv", part_file, file
@@ -29,8 +30,8 @@ def download(d)
     pp $?
   end
 rescue Interrupt
-  puts "\nInterrupt (sleep 1s)"
-  sleep 1
+  puts "\nInterrupt (sleeping 2s before proceeding with next file)"
+  sleep 2
 end
 
 downloads["list"].each do |item|
