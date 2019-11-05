@@ -4,6 +4,10 @@ require "pp"
 require "shellwords"
 
 filename = Dir.glob("#{ENV['HOME']}/.mozilla/firefox/*.default/downloads.json").first
+if !filename
+  puts "No downloads in progress"
+  exit
+end
 json = File.read(filename)
 downloads = JSON.parse(json)
 
