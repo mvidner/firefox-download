@@ -23,7 +23,7 @@ def download(d)
     return
   end
 
-  command = ["wget", "--read-timeout=60", "--no-use-server-timestamps", "-c",  "-O", part_file, url]
+  command = ["wget", "--read-timeout=60", "--no-use-server-timestamps", "--continue", "-output-document", part_file, url]
   puts command.map(&:shellescape).join(" ")
   result = system(*command)
   if result
