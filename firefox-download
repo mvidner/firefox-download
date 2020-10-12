@@ -1,15 +1,18 @@
 #!/usr/bin/env ruby
+# coding: utf-8
 require "json"
 require "pp"
 require "shellwords"
 
-filename = Dir.glob("#{ENV['HOME']}/.mozilla/firefox/*.default/downloads.json").first
-if !filename
-  puts "No downloads in progress"
-  exit
+def downloads_json
+  filename = Dir.glob("#{ENV['HOME']}/.mozilla/firefox/*/downloads.json").first
+  if !filename
+    puts "No downloads in progress"
+    exit
+  end
+  json = File.read(filename)
+  JSON.parse(json)
 end
-json = File.read(filename)
-downloads = JSON.parse(json)
 
 def download(d)
   url = d["source"]
@@ -23,21 +26,49 @@ def download(d)
     return
   end
 
-  command = ["wget", "--read-timeout=60", "--no-use-server-timestamps", "--continue", "-output-document", part_file, url]
-  puts command.map(&:shellescape).join(" ")
-  result = system(*command)
-  if result
-    system "mv", part_file, file
-  else
-    puts "Failed"
-    pp result
-    pp $?
-  end
+  wget(url, part_file, file)
 rescue Interrupt
   puts "\nInterrupt (sleeping 2s before proceeding with next file)"
   sleep 2
 end
 
-downloads["list"].each do |item|
-  download item
+def wget(url, partial_fn, final_fn)
+  command = ["wget", "--read-timeout=60", "--no-use-server-timestamps", "--continue", "--output-document", partial_fn, url]
+  puts command.map(&:shellescape).join(" ")
+  result = system(*command)
+  if result
+    system "mv", partial_fn, final_fn
+  else
+    puts "Failed"
+    pp result
+    pp $?
+  end
+end
+
+def download_by_url(url)
+  out = `curl -f -L -I #{url.shellescape}`
+  return if out.empty?
+  puts
+  fn = nil
+  out.lines.each do |l|
+    match = (l =~ /^Content-Disposition: attachment; filename\*=UTF-8''(.*)/)
+    next if match.nil?
+    fn = URI.decode($1.chomp)
+    break
+  end
+  final_fn = ENV["HOME"] + "/Stažené/" + fn
+  partial_fn = final_fn + ".part"
+  p final_fn
+  p partial_fn
+  p File.stat partial_fn
+  wget(url, partial_fn, final_fn)
+end
+
+if ARGV[0] == "-u"
+  download_by_url ARGV[1]
+else
+  downloads = downloads_json
+  downloads["list"].each do |item|
+    download item
+  end
 end
