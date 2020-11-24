@@ -27,9 +27,6 @@ def download(d)
   end
 
   wget(url, part_file, file)
-rescue Interrupt
-  puts "\nInterrupt (sleeping 2s before proceeding with next file)"
-  sleep 2
 end
 
 def wget(url, partial_fn, final_fn)
@@ -64,11 +61,30 @@ def download_by_url(url)
   wget(url, partial_fn, final_fn)
 end
 
+def interruptible(is_last: false, &block)
+  begin
+    block.call
+  rescue Interrupt
+    puts "\nInterrupt"
+    return if is_last
+
+    puts "(sleeping 2s before proceeding with next file)"
+    sleep 2
+  end
+rescue Interrupt
+  puts "\nExiting"
+  exit
+end
+
 if ARGV[0] == "-u"
   download_by_url ARGV[1]
 else
-  downloads = downloads_json
-  downloads["list"].each do |item|
-    download item
+  downloads = downloads_json["list"]
+
+  downloads_count = downloads.count
+  downloads.each_with_index do |item, i|
+    interruptible(is_last: i + 1 == downloads_count) do
+      download item
+    end
   end
 end
