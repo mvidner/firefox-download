@@ -30,7 +30,7 @@ def download(d)
 end
 
 def wget(url, partial_fn, final_fn)
-  command = ["wget", "--read-timeout=60", "--no-use-server-timestamps", "--continue", "--output-document", partial_fn, url]
+  command = ["wget", "--read-timeout=60", "--no-use-server-timestamps", "--retry-on-host-error", "--continue", "--output-document", partial_fn, url]
   puts command.map(&:shellescape).join(" ")
   result = system(*command)
   if result
