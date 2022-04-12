@@ -3,6 +3,7 @@
 require "json"
 require "pp"
 require "shellwords"
+require "fileutils"
 
 def downloads_json
   filename = Dir.glob("#{ENV['HOME']}/.mozilla/firefox/*/downloads.json").first
@@ -34,7 +35,15 @@ def wget(url, partial_fn, final_fn)
   puts command.map(&:shellescape).join(" ")
   result = system(*command)
   if result
-    system "mv", partial_fn, final_fn
+    if File.symlink?(partial_fn)
+      target_partial_fn = File.readlink(partial_fn)
+      target_final_fn = target_partial_fn.sub(/\.part$/, "")
+      if target_final_fn != target_partial_fn
+        FileUtils.mv(target_partial_fn, target_final_fn)
+      end
+      FileUtils.ln_s(target_final_fn, partial_fn, force: true)
+    end
+    FileUtils.mv(partial_fn, final_fn)
   else
     puts "Failed"
     pp result
